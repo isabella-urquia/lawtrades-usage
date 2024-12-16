@@ -82,6 +82,7 @@ if __name__ == "__main__":
 
         billing_term_line_item_id = uuid4()
         name = dict["billing_line_item_name"]
+        description = dict["billing_line_item_note"]
 
         event_id = event_exists(dict['event_to_track'])
         if (billing_type != 'FLAT_PRICE' and event_id == None):
@@ -105,12 +106,16 @@ if __name__ == "__main__":
         condition_operator = "NOT_OPERATOR" if "conditionOperator" not in dict or dict["conditionOperator"] == '' else dict["conditionOperator"]
         condition_value = 0 if "conditionValue" not in dict or dict["conditionValue"] == '' else int(dict["conditionValue"])
 
+        rp_id = uuid4()
+        rs_id = uuid4()
 
         print(billing_term_id.hex, contract_id, billing_type, start_date, end_date, is_recurring, due_interval, net_payment_terms, due_interval_unit, is_arrears)
         print(billing_term_line_item_id.hex, billing_term_id.hex, name, "", quantity)
         print (pricing_id.hex, billing_term_id.hex, "", tier, "usd", str(mantissa), str(exponent), condition_value, condition_operator)
-        cursor.execute("INSERT INTO billing_terms (id, contract_id, billing_type, start_date, end_date, is_recurring, due_interval, net_payment_terms, due_interval_unit, is_arrears, event_type_id, duration) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", (billing_term_id.hex, contract_id, billing_type, start_date, end_date, is_recurring, due_interval, net_payment_terms, due_interval_unit, is_arrears, event_id, duration))
-        cursor.execute("INSERT into billing_term_line_items (id, \"billingTermId\", name, note, quantity, \"itemId\") values (%s, %s, %s, %s, %s, %s)", (billing_term_line_item_id.hex, billing_term_id.hex, name, "", quantity, item_id))
+        cursor.execute("INSERT into revenue_product (id, customer_id) values (%s, %s)", (rp_id.hex, customer_id))
+        cursor.execute("INSERT into revenue_schedule (id, revenue_product_id, service_start_date, service_end_date) values (%s, %s, %s, %s)", (rs_id.hex, rp_id.hex, start_date, end_date))
+        cursor.execute("INSERT INTO billing_terms (id, contract_id, billing_type, start_date, end_date, is_recurring, due_interval, net_payment_terms, due_interval_unit, is_arrears, event_type_id, duration, revenue_schedule_id) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", (billing_term_id.hex, contract_id, billing_type, start_date, end_date, is_recurring, due_interval, net_payment_terms, due_interval_unit, is_arrears, event_id, duration, rs_id.hex))
+        cursor.execute("INSERT into billing_term_line_items (id, \"billingTermId\", name, note, quantity, \"itemId\") values (%s, %s, %s, %s, %s, %s)", (billing_term_line_item_id.hex, billing_term_id.hex, name, description, quantity, item_id))
         cursor.execute("INSERT into pricings (id, \"billingTermId\", name, tier, currency, mantissa, exponent, condition_value, condition_operator) values (%s, %s, %s, %s, %s, %s, %s, %s, %s)", (pricing_id.hex, billing_term_id.hex, "", tier, "usd", str(mantissa), str(exponent), condition_value, condition_operator))
 
         # if (billing_type.lower()) == "unit_price":
