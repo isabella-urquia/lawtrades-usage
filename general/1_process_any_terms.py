@@ -9,6 +9,8 @@ from dateutil.parser import parse
 import json
 import os
 
+# i am making my first change
+
 conn = psycopg2.connect(
     dbname="core",
     user="rw",
