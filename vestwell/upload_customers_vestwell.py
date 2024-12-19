@@ -3,6 +3,7 @@ import psycopg2
 from uuid import uuid4
 import os
 import sys
+import json
 
 conn = psycopg2.connect(
     dbname="core",
@@ -39,6 +40,7 @@ if __name__ == "__main__":
         zip_code = dict["billing_address_zip_code"]
         country = dict["billing_address_country"]
         plan_id = dict["planid_(externalid)"]
+        metadata_fields = ["ordway", "advisor", "statement_advisor", "forfeiture_balance", "prepayment_balance"]
 
         customer_id = uuid4()
         address_id = uuid4()
@@ -54,6 +56,12 @@ if __name__ == "__main__":
 
         cursor.execute("INSERT into contacts_v2 (id, customer_id, email) values (%s, %s, %s) returning id", (contacts_id.hex, new_parent_customer_id, email))
         new_parent_contact_id = cursor.fetchone()[0]
+
+        metadata = {}
+        for field in metadata_fields:
+            metadata[field] = dict["metadata:" + field]
+
+        cursor.execute("INSERT into customer_external_ids (customer_id, source_type, external_id, metadata) values (%s, %s, %s, %s)", (new_parent_customer_id, "SALESFORCE", plan_id, json.dumps(metadata)))
 
         print("New address for parent customer: " + new_address_id)
         print("New parent customer: " + new_parent_customer_id)
@@ -77,6 +85,8 @@ if __name__ == "__main__":
         cursor.execute("INSERT into contacts_v2 (id, customer_id, email) values (%s, %s, %s) returning id", (contacts_id_sponsor.hex, new_customer_id_sponsor, email))
         new_contact_id_sponsor = cursor.fetchone()[0]
 
+        cursor.execute("INSERT into customer_external_ids (customer_id, source_type, external_id, metadata) values (%s, %s, %s, %s)", (new_customer_id_sponsor, "SALESFORCE", plan_id, json.dumps(metadata)))
+
         print("New address for 'Sponsor' subcustomer: " + new_address_id_sponsor)
         print("New 'Sponsor' subcustomer: " + new_customer_id_sponsor)
         print("New contact for 'Sponsor' subcustomer: " + new_contact_id_sponsor)
@@ -98,6 +108,8 @@ if __name__ == "__main__":
 
         cursor.execute("INSERT into contacts_v2 (id, customer_id, email) values (%s, %s, %s) returning id", (contacts_id_participant.hex, new_customer_id_participant, email))
         new_contact_id_participant = cursor.fetchone()[0]
+
+        cursor.execute("INSERT into customer_external_ids (customer_id, source_type, external_id, metadata) values (%s, %s, %s, %s)", (new_customer_id_participant, "SALESFORCE", plan_id, json.dumps(metadata)))
 
         print("New address for 'Participant' subcustomer: " + new_address_id_participant)
         print("New 'Participant' subcustomer: " + new_customer_id_participant)
