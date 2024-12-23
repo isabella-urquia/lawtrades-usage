@@ -10,7 +10,7 @@ conn = psycopg2.connect(
     user="rw",
     password=os.getenv('SCRIPT_DB_PASSWORD'),
     port=5432,
-    host="core.cluster-cizo3akkr249.us-east-1.rds.amazonaws.com",
+    host=os.getenv('DATABASE_URL'),
     sslmode='require'
 )
 cursor = conn.cursor()
@@ -23,7 +23,7 @@ def csv_to_list_of_dicts(filename):
 if __name__ == "__main__":
     dicts = {}
     output_csv = []
-    print(sys.argv)
+
     if (len(sys.argv) == 3):
         dicts = csv_to_list_of_dicts(str(sys.argv[1]))
         
@@ -35,10 +35,10 @@ if __name__ == "__main__":
         email = dict["email"]
         address_line_1 = dict["billing_address_street_address_line_1"]
         address_line_2 = dict["billing_address_street_address_line_2"]
-        city = dict["billing_address_city"]
-        state = dict["billing_address_state"]
-        zip_code = dict["billing_address_zip_code"]
-        country = dict["billing_address_country"]
+        city = dict["billing_address_street_address_city"]
+        state = dict["billing_address_street_address_state"]
+        zip_code = dict["billing_address_street_address_zip_code"]
+        country = dict["billing_address_street_address_country"]
         plan_id = dict["planid_(externalid)"]
         metadata_fields = ["ordway", "advisor", "statement_advisor", "forfeiture_balance", "prepayment_balance"]
 
