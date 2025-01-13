@@ -17,3 +17,5 @@ $ git commit -m "[message_here]"
 5. Push your new branch up
 $ git push
 ```
+
+source tabs-fde/general/venv/bin/activate
