@@ -158,6 +158,3 @@ cursor.close()
 conn.close()
 
 print(cs)
-
-# Alkira files path
-
