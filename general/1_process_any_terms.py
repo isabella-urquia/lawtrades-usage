@@ -11,10 +11,13 @@ import os
 
 conn = psycopg2.connect(
     dbname="core",
-    user="rw",
+    user="chirag",
+    #change password
     password=os.getenv('SCRIPT_DB_PASSWORD'),
     port=5432,
+    #Change Host
     host="core.cluster-c1gkmwasa8f7.us-east-1.rds.amazonaws.com",
+    # host="core.cluster-cizo3akkr249.us-east-1.rds.amazonaws.com",
     sslmode='require'
 )
 cursor = conn.cursor()
