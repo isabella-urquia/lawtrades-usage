@@ -43,8 +43,8 @@ def csv_to_list_of_dicts(filename):
         reader = csv.DictReader(file)
         return [row for row in reader]
     
-start_date = first_day_this_month_str
-end_date = first_day_next_month_str
+start_date = '2024-12-01'
+end_date = '2024-12-31'
 if __name__ == "__main__":
     dicts = csv_to_list_of_dicts("/Users/chiragdas/Downloads/findigs_monthly_activity_2024_12_01.csv")
     vendor_dict = {}
