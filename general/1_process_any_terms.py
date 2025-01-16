@@ -11,10 +11,13 @@ import os
 
 conn = psycopg2.connect(
     dbname="core",
-    user="rw",
+    user="chirag",
+    #change password
     password=os.getenv('SCRIPT_DB_PASSWORD'),
     port=5432,
+    #Change Host
     host="core.cluster-c1gkmwasa8f7.us-east-1.rds.amazonaws.com",
+    # host="core.cluster-cizo3akkr249.us-east-1.rds.amazonaws.com",
     sslmode='require'
 )
 cursor = conn.cursor()
@@ -38,7 +41,8 @@ def convert_date(dts):
     return datetime.datetime.strptime(dts, "%m/%d/%Y")
 
 def csv_to_list_of_dicts():
-    with open("/Users/deepakbapat/Sources/deepak-scripts/hubilio/Mercy Health BTs - Billing Terms Template.csv", mode='r') as file:
+    #Change Filepath
+    with open("/Users/chiragdas/Downloads/AlkiraCustomersheet-Restorepoint.csv", mode='r') as file:
         # DictReader reads each row of the CSV as a dictionary, using the first row as the keys
         reader = csv.DictReader(file)
         return [row for row in reader]
@@ -70,11 +74,12 @@ if __name__ == "__main__":
         # Use new columns if they exist, fallback to start_date/end_date
         rev_sched_start_date = (
             convert_date(dict["revenue_schedule_start_date"])
-            if dict["revenue_schedule_start_date"] else start_date
+            if "revenue_schedule_start_date" in dict and dict["revenue_recognition"] else start_date
         )
+
         rev_sched_end_date = (
             convert_date(dict["revenue_schedule_end_date"])
-            if dict["revenue_schedule_end_date"] else end_date
+            if "revenue_schedule_end_date" in dict and dict["revenue_schedule_end_date"] else end_date
         )
 
         # Extract revenue recognition column; use None if empty
@@ -115,7 +120,7 @@ if __name__ == "__main__":
         pricing_id = uuid4()
         tier = 0
         currency = "usd"
-        mantissa = float(dict['pricing_tier_0_price'].replace("$", "").replace(",", "").strip())
+        mantissa = float(dict['discounted pricing'].replace("$", "").replace(",", "").strip())
         exponent = 0
 
         # event_type_id = None
@@ -130,7 +135,7 @@ if __name__ == "__main__":
         print(billing_term_line_item_id.hex, billing_term_id.hex, name, "", quantity)
         print (pricing_id.hex, billing_term_id.hex, "", tier, "usd", str(mantissa), str(exponent), condition_value, condition_operator)
         cursor.execute("INSERT into revenue_product (id, customer_id) values (%s, %s)", (rp_id.hex, customer_id))
-        cursor.execute("INSERT into revenue_schedule (id, revenue_product_id, service_start_date, service_end_date, revenue_recognition) values (%s, %s, %s, %s, %s)", (rs_id.hex, rp_id.hex, rev_sched_start_date, rev_sched_end_date, revenue_recognition))
+        cursor.execute("INSERT into revenue_schedule (id, revenue_product_id, service_start_date, service_end_date) values (%s, %s, %s, %s)", (rs_id.hex, rp_id.hex, rev_sched_start_date, rev_sched_end_date))
         cursor.execute("INSERT INTO billing_terms (id, contract_id, billing_type, start_date, end_date, is_recurring, due_interval, net_payment_terms, due_interval_unit, is_arrears, event_type_id, duration, revenue_schedule_id) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", (billing_term_id.hex, contract_id, billing_type, start_date, end_date, is_recurring, due_interval, net_payment_terms, due_interval_unit, is_arrears, event_id, duration, rs_id.hex))
         cursor.execute("INSERT into billing_term_line_items (id, \"billingTermId\", name, note, quantity, \"itemId\") values (%s, %s, %s, %s, %s, %s)", (billing_term_line_item_id.hex, billing_term_id.hex, name, description, quantity, item_id))
         cursor.execute("INSERT into pricings (id, \"billingTermId\", name, tier, currency, mantissa, exponent, condition_value, condition_operator) values (%s, %s, %s, %s, %s, %s, %s, %s, %s)", (pricing_id.hex, billing_term_id.hex, "", tier, "usd", str(mantissa), str(exponent), condition_value, condition_operator))

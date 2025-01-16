@@ -3,24 +3,30 @@ import psycopg2
 from uuid import uuid4
 from datetime import datetime
 import sys
-import datetime
+import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from dateutil.parser import parse
 import json
 import os
 
+
 conn = psycopg2.connect(
     dbname="core",
-    user="rw",
+    user="chirag",
     password=os.getenv('SCRIPT_DB_PASSWORD'),
     port=5432,
-    host="core.cluster-c1gkmwasa8f7.us-east-1.rds.amazonaws.com",
+    host="core-1.c1gkmwasa8f7.us-east-1.rds.amazonaws.com",
     sslmode='require'
 )
 cursor = conn.cursor()
 
+first_day_of_month = datetime.now().replace(day=1)
+first_day_of_next_month = (first_day_of_month + timedelta(days=32)).replace(day=1)
+first_day_this_month_str = first_day_of_month.strftime('%Y-%m-%d')
+first_day_next_month_str = first_day_of_next_month.strftime('%Y-%m-%d')
+
 def existsBT(cid):
-    cursor.execute("SELECT b.id FROM billing_terms b join contracts c on b.contract_id = c.id where c.id = '{}' and b.start_date = '2024-11-01' and b.deleted_at is null limit 1".format(cid))
+    cursor.execute("SELECT b.id FROM billing_terms b join contracts c on b.contract_id = c.id where c.id = '{}' and b.start_date = '2024-12-01' and b.deleted_at is null limit 1".format(cid))
     row = cursor.fetchone()
     # Transform the result into a dictionary
     return row[0] if row else None
@@ -37,10 +43,10 @@ def csv_to_list_of_dicts(filename):
         reader = csv.DictReader(file)
         return [row for row in reader]
     
-start_date = '2024-11-01'
-end_date = '2024-11-30'
+start_date = '2024-12-01'
+end_date = '2024-12-31'
 if __name__ == "__main__":
-    dicts = csv_to_list_of_dicts("/Users/deepakbapat/Sources/deepak-scripts/findigs/monthly_activity_data_2024_11_01 (1).csv")
+    dicts = csv_to_list_of_dicts("/Users/chiragdas/Downloads/findigs_monthly_activity_2024_12_01.csv")
     vendor_dict = {}
 
     for dict in dicts:
@@ -177,7 +183,7 @@ if __name__ == "__main__":
             }
             dict_csvs.append(csv_dict)
     
-    filename = 'output26.csv'
+    filename = 'Dec_Findigs_Remittance.csv'
     # Writing to the CSV file
     with open(filename, mode='w', newline='') as file:
         # Assuming all dictionaries have the same keys, use the keys from the first dictionary
