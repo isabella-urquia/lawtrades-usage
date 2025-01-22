@@ -35,7 +35,7 @@ def snake_case(s):
     return "_".join(words)
 
 if __name__ == "__main__":
-    # Given filke with customer names, map all to their ids in our database (output file has customer_id, vendor_id, customer_name)
+    # Given file with customer names, map all to their ids in our database (output file has customer_id, vendor_id, customer_name)
     path = "<PATH TO CUSOTMERS NAMES FILE>"
     dicts = csv_to_list_of_dicts(path)
     new_list_of_dicts = []
