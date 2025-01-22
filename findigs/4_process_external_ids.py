@@ -35,39 +35,39 @@ def snake_case(s):
     return "_".join(words)
 
 if __name__ == "__main__":
-    # # Map all customers' names to their ids in our database (output file has customer_id, vendor_id, customer_name)
-    # path = "Findigs-Customer_List-May-Update_Vendor_ID.csv"
-    # dicts = csv_to_list_of_dicts(path)
-    # new_list_of_dicts = []
+    # Given filke with customer names, map all to their ids in our database (output file has customer_id, vendor_id, customer_name)
+    path = "<PATH TO CUSOTMERS NAMES FILE>"
+    dicts = csv_to_list_of_dicts(path)
+    new_list_of_dicts = []
     
-    # for dict in dicts:
-    #     customer_name = dict["customer_name"]
+    for dict in dicts:
+        customer_name = dict["customer_name"]
 
-    #     cursor.execute("SELECT id FROM customers WHERE name = %s AND manufacturer_id='76310fa7-758a-4062-307e-a9e75497b770'", (customer_name,))
-    #     customer_id = cursor.fetchone()
-    #     customer_id = customer_id[0] if customer_id else None
-    #     new_list_of_dicts.append({
-    #         "customer_id": customer_id,
-    #         "vendor_id": dict["vendor_id"],
-    #         "customer_name": customer_name
-    #     })
+        cursor.execute("SELECT id FROM customers WHERE name = %s AND manufacturer_id='76310fa7-758a-4062-307e-a9e75497b770'", (customer_name,))
+        customer_id = cursor.fetchone()
+        customer_id = customer_id[0] if customer_id else None
+        new_list_of_dicts.append({
+            "customer_id": customer_id,
+            "vendor_id": dict["vendor_id"],
+            "customer_name": customer_name
+        })
     
-    # filename = 'output_findigs_customers.csv'
-    # # Writing to the CSV file
-    # with open(filename, mode='w', newline='') as file:
-    #     # Assuming all dictionaries have the same keys, use the keys from the first dictionary
-    #     fields = new_list_of_dicts[0].keys()
-    #     writer = csv.DictWriter(file, fieldnames=fields)
+    filename = 'output_findigs_customers.csv'
+    # Writing to the CSV file
+    with open(filename, mode='w', newline='') as file:
+        # Assuming all dictionaries have the same keys, use the keys from the first dictionary
+        fields = new_list_of_dicts[0].keys()
+        writer = csv.DictWriter(file, fieldnames=fields)
 
-    #     # Write the header
-    #     writer.writeheader()
+        # Write the header
+        writer.writeheader()
 
-    #     # Write the data rows
-    #     writer.writerows(new_list_of_dicts)
+        # Write the data rows
+        writer.writerows(new_list_of_dicts)
 
-    # print(f'Data written to {filename} successfully.')
+    print(f'Data written to {filename} successfully.')
 
-    # Add all customers to customers_external_ids table
+    # After all customer ids where found, add them to customers_external_ids table with their external ids
     path = "customers_with_external_ids.csv"
     dicts = csv_to_list_of_dicts(path)
 
