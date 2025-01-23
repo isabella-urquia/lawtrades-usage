@@ -1,6 +1,6 @@
 import os
 from typing import List, Optional, Tuple
-
+from uuid import uuid4
 import psycopg2
 
 conn = psycopg2.connect(
@@ -60,19 +60,20 @@ def find_all_alkira_event_types() -> List[Tuple]:
 def insert_all_alkira_events_into_sandbox() -> None:
     event_types = find_all_alkira_event_types()
     for event_type in event_types:
+        event_id = uuid4()
         cursor.execute(
             """
             INSERT INTO event_types_v2 
-            (field_to_sum, display_type, field_to_name, name, manufacturer_id) 
-            VALUES (%s, %s, %s, %s, %s)
+            (id, field_to_sum, display_type, field_to_name, name, manufacturer_id) 
+            VALUES (%s, %s, %s, %s, %s, %s)
         """,
-            ("value", "GROUPED", event_type[0], event_type[1], ALKIRA_SANDBOX_ID),
+            (event_id.hex, "value", "GROUPED", event_type[0], event_type[1], ALKIRA_SANDBOX_ID,),
         )
 
 
 def find_all_billing_terms() -> List[Tuple]:
     query = """
-        SELECT billing_terms.id,  
+        SELECT billing_terms.id, billing_terms.event_type_id 
         FROM billing_terms 
         JOIN contracts ON contracts.id = billing_terms.contract_id
         WHERE contracts.manufacturer_id = %s 
@@ -87,7 +88,7 @@ def find_all_billing_terms() -> List[Tuple]:
 def reassign_all_billing_terms() -> None:
     billing_terms = find_all_billing_terms()
     for billing_term in billing_terms:
-        event_type = find_event_by_id(billing_term[0])
+        event_type = find_event_by_id(billing_term[1])
         if not event_type:
             print(f"No event type found for billing term: {billing_term[0]}")
             continue
@@ -105,13 +106,13 @@ def reassign_all_billing_terms() -> None:
         """,
             (sandbox_type, billing_term[0]),
         )
-        print(f"Reassigned {billing_term[0]}")
+        print(f"Reassigned {billing_term[0]} to {sandbox_type}")
 
 
 if __name__ == "__main__":
     insert_all_alkira_events_into_sandbox()
     reassign_all_billing_terms()
-    # conn.commit()
+    conn.commit()
 
 cursor.close()
 conn.close()
