@@ -26,14 +26,15 @@ first_day_this_month_str = first_day_of_month.strftime('%Y-%m-%d')
 first_day_next_month_str = first_day_of_next_month.strftime('%Y-%m-%d')
 last_day_this_month_str = last_day_of_current_month.strftime('%Y-%m-%d')
 
-# start_date = first_day_this_month_str
-# end_date = last_day_this_month_str
+start_date = first_day_this_month_str
+end_date = last_day_this_month_str
 
-start_date = '2024-11-01'
-end_date = '2024-11-30'
+# start_date = '2024-12-01'
+# end_date = '2024-12-31'
 
 def existsBT(cid):
     cursor.execute("SELECT b.id FROM billing_terms b JOIN contracts c ON b.contract_id = c.id WHERE c.id = %s AND b.start_date = %s AND c.deleted_at is null AND b.deleted_at is null limit 1", (cid, start_date))
+
     row = cursor.fetchone()
     # Transform the result into a dictionary
     return row[0] if row else None
@@ -49,9 +50,15 @@ def csv_to_list_of_dicts(filename):
         # DictReader reads each row of the CSV as a dictionary, using the first row as the keys
         reader = csv.DictReader(file)
         return [row for row in reader]
-    
+
+import pandas
+
+
 if __name__ == "__main__":
-    dicts = csv_to_list_of_dicts("/Users/chiragdas/Downloads/Novemeber Findigs Remittances - Sheet2.csv")
+
+    df = pandas.read_csv("/Users/chiragdas/Downloads/findigs_monthly_activity_2024_12_01 (1).csv")
+    print('dfff', df)
+    dicts = csv_to_list_of_dicts("/Users/chiragdas/Downloads/findigs_monthly_activity_2024_12_01 (1).csv")
     vendor_dict = {}
 
     for dict in dicts:
@@ -80,7 +87,7 @@ if __name__ == "__main__":
                 {
                     "name": "Application Remittance", 
                     "companyname": dict['portfolio_name'],
-                    "amount": application_remit,
+                    "amount": -1.0*application_remit,
                     "qty": total_apps_submitted if not flexible else 1, 
                     "note": "" if not flexible else str(total_apps_submitted) + " applications submitted, " + str(total_apps_run) + " applications run",
                     "item_id": 'aa3afdd1-5c61-4772-a91a-f7c5eee536bd'
@@ -91,7 +98,7 @@ if __name__ == "__main__":
                 {
                     "name": "Pet Verification Remittance", 
                     "companyname": dict['portfolio_name'],
-                    "amount": pet_remit,
+                    "amount": -1.0*pet_remit,
                     "qty": total_pet_verifications,
                     "note": "",
                     "item_id": "edaf45fd-527c-4879-8fc7-f42355a8d5fd"
@@ -102,7 +109,7 @@ if __name__ == "__main__":
                 {
                     "name": "Decision Assist Fees", 
                     "companyname": dict['portfolio_name'],
-                    "amount": -1*decision_assist_fees,
+                    "amount": decision_assist_fees,
                     "qty": total_decision_assists,
                     "note": "",
                     "item_id": '06e39cc3-f6b0-41ee-81ab-610120fd3514'
@@ -122,13 +129,12 @@ if __name__ == "__main__":
                 {
                     "name": "Payment Processing Fees", 
                     "companyname": dict['portfolio_name'],
-                    "amount": -1.0*total_processing_fees,
+                    "amount": total_processing_fees,
                     "qty": 1, 
                     "note": "" if not flexible else str(total_apps_submitted) + " applications submitted, " + str(total_apps_run) + " applications run",
                     "item_id": 'aa3afdd1-5c61-4772-a91a-f7c5eee536bd'
                 }
             )
-        
 
         if dict['quickbooks_vendor_id'] in vendor_dict:
             vals = vendor_dict[dict['quickbooks_vendor_id']]
@@ -163,9 +169,8 @@ if __name__ == "__main__":
                 continue
 
             bt_exists = existsBT(contract)
-
             if (bt_exists):
-                print(bt_exists)
+                print("bt_exists for " + contract)
                 continue
             csv_dict = {
                 "contract_id": contract,
@@ -188,11 +193,12 @@ if __name__ == "__main__":
             }
             dict_csvs.append(csv_dict)
     
-    filename = 'Nov_Findigs_Remittances_3.csv'
+    filename = 'Dec_Invoices_Findigs_4.csv'
     # Writing to the CSV file
     with open(filename, mode='w', newline='') as file:
         # Assuming all dictionaries have the same keys, use the keys from the first dictionary
-        fields = dict_csvs[0].keys() 
+        print(dict_csvs)
+        fields = dict_csvs[0].keys()
         writer = csv.DictWriter(file, fieldnames=fields)
 
         # Write the header

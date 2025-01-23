@@ -11,16 +11,31 @@ import os
 
 conn = psycopg2.connect(
     dbname="core",
-    user="chirag",
+    user="rw",
     password=os.getenv('SCRIPT_DB_PASSWORD'),
     port=5432,
-    host="core-1.c1gkmwasa8f7.us-east-1.rds.amazonaws.com",
+    host="core.cluster-c1gkmwasa8f7.us-east-1.rds.amazonaws.com",
     sslmode='require'
 )
 cursor = conn.cursor()
 
+first_day_of_month = datetime.now().replace(day=1)
+first_day_of_next_month = (first_day_of_month + relativedelta(months=1)).replace(day=1)
+last_day_of_current_month = first_day_of_next_month - relativedelta(days=1)
+
+first_day_this_month_str = first_day_of_month.strftime('%Y-%m-%d')
+first_day_next_month_str = first_day_of_next_month.strftime('%Y-%m-%d')
+last_day_this_month_str = last_day_of_current_month.strftime('%Y-%m-%d')
+
+existsbt_start_date = first_day_this_month_str
+existsbt_end_date = first_day_next_month_str
+
+# existsbt_start_date = first_day_this_month_str = '2024-12-01'
+# existsbt_end_date = first_day_next_month_str = '2025-01-01'
+
+
 def existsBT(cid):
-    cursor.execute("SELECT b.id FROM billing_terms b join contracts c on b.contract_id = c.id where c.id = '{}' and b.start_date = '2024-12-01' and b.created_at < '2021-01-01' limit 1".format(cid))
+    cursor.execute("SELECT b.id FROM billing_terms b join contracts c on b.contract_id = c.id where c.id = %s and b.start_date = %s and b.created_at < %s limit 1", (cid, existsbt_start_date, existsbt_end_date))
     row = cursor.fetchone()
     # Transform the result into a dictionary
     return row[0] if row else None
@@ -29,7 +44,7 @@ def convert_date(dts):
     return datetime.datetime.strptime(dts, "%Y-%m-%d")
 
 def csv_to_list_of_dicts():
-    with open("Dec_Findigs_Remittance.csv", mode='r') as file:
+    with open("Dec_Invoices_Findigs_2.csv", mode='r') as file:
         # DictReader reads each row of the CSV as a dictionary, using the first row as the keys
         reader = csv.DictReader(file)
         return [row for row in reader]
@@ -88,14 +103,14 @@ if __name__ == "__main__":
         print(billing_term_id.hex, contract_id, billing_type, start_date, end_date, is_recurring, due_interval, net_payment_terms, due_interval_unit, True)
         print(billing_term_line_item_id.hex, billing_term_id.hex, name, "", quantity)
         print (pricing_id.hex, billing_term_id.hex, "", tier, "usd", str(mantissa), str(exponent), condition_value, condition_operator)
-        cursor.execute("INSERT INTO billing_terms (id, contract_id, billing_type, start_date, end_date, is_recurring, due_interval, net_payment_terms, due_interval_unit, is_arrears, duration, date_offset, invoice_type) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", (billing_term_id.hex, contract_id, billing_type, start_date, end_date, is_recurring, due_interval, net_payment_terms, due_interval_unit, True, 1, -1, "BILL"))
+        cursor.execute("INSERT INTO billing_terms (id, contract_id, billing_type, start_date, end_date, is_recurring, due_interval, net_payment_terms, due_interval_unit, is_arrears, duration, date_offset, invoice_type) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", (billing_term_id.hex, contract_id, billing_type, start_date, end_date, is_recurring, due_interval, net_payment_terms, due_interval_unit, True, 1, -1, "INVOICE"))
         cursor.execute("INSERT into billing_term_line_items (id, \"billingTermId\", name, note, quantity, \"itemId\") values (%s, %s, %s, %s, %s, %s)", (billing_term_line_item_id.hex, billing_term_id.hex, name, billing_line_item_note, quantity, item_id))
         cursor.execute("INSERT into pricings (id, \"billingTermId\", name, tier, currency, mantissa, exponent, condition_value, condition_operator) values (%s, %s, %s, %s, %s, %s, %s, %s, %s)", (pricing_id.hex, billing_term_id.hex, "", tier, "usd", str(mantissa), str(exponent), condition_value, condition_operator))
 
         if (billing_type.lower()) == "unit_price":
             raise Exception("not implemented")
 
-    # conn.commit()
+    conn.commit()
 cursor.close()
 conn.close()
 
