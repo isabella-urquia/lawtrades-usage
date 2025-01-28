@@ -22,6 +22,10 @@ def customer_exists(customer_id):
     row = cursor.fetchone()
     return row[0] if row else None # id if customer exists, None otherwise
 
+def contract_exists(customer_id):
+    cursor.execute("SELECT id FROM contracts WHERE customer_id = %s AND manufacturer_id = %s LIMIT 1", (customer_id, manufacturer_id))
+    return cursor.fetchone() is not None
+
 def csv_to_list_of_dicts(path):
     with open(path, mode='r') as file:
         # DictReader reads each row of the CSV as a dictionary, using the first row as the keys
@@ -45,7 +49,7 @@ if __name__ == "__main__":
 
         # If customer exists, create contract for it
         if customer_id:
-            if customer_id not in customer_contracts:
+            if not contract_exists(customer_id):
                 # Customer exists and contract wasn't created for this customer yet
                 contract_id = uuid4()
                 cursor.execute("INSERT INTO contracts (id, customer_id, uploader_id, aws_s3_key, manufacturer_id, name, file_name, last_modified_by, last_modified_by_type, deleted_at, bulk_upload_id, contract_summary) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", 
