@@ -22,7 +22,7 @@ def create_businesses(merchant_id, businesses, token):
         except requests.exceptions.RequestException as e:
             print(f"Error creating business for {business['refId']}: {e}")
 
-merchant_id = "12345"  # Replace with your merchant ID
+merchant_id = "76310fa7-758a-4062-307e-a9e75497b770"  
 businesses = [
     {"refId": "business-1"},
     {"refId": "business-2"},

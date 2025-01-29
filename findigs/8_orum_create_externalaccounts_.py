@@ -38,7 +38,7 @@ def create_external_accounts(merchant_id, accounts, token):
             print(f"Error creating external account for {account['refId']}: {e}")
 
 # Define the merchant ID and API token
-merchant_id = "12345"  # Replace with your merchant ID
+merchant_id = "76310fa7-758a-4062-307e-a9e75497b770"  # Replace with your merchant ID
 token = "YOUR_ACCESS_TOKEN"  # Replace with your API token
 
 # List of accounts to be created
