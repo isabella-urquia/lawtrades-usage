@@ -31,8 +31,6 @@ if __name__ == "__main__":
         dicts = csv_to_list_of_dicts(str(sys.argv[1]))
         
     for dict in dicts:
-        # merchant_id = dict["merchant_id"]
-        # merchant_name = dict["merchant_name"]
         customer_name = dict["customer_name"]
         first_name = dict["first_name"]
         last_name = dict["last_name"]

@@ -2,6 +2,7 @@ import csv
 import psycopg2
 from uuid import uuid4
 import os
+import sys
 
 conn = psycopg2.connect(
     dbname="core",
@@ -34,7 +35,7 @@ def csv_to_list_of_dicts(path):
 
 
 if __name__ == "__main__":
-    path = "/Users/mzisbrod/Documents/GitHub/tabs-fde/luxsci/luxsci_dec_2023.csv"
+    path = sys.argv[1]
     dicts = csv_to_list_of_dicts(path)
     output_data = []
 
@@ -76,7 +77,7 @@ if __name__ == "__main__":
 cursor.close()
 conn.close()
 
-output_file = "luxsci_dec_2023_contracts.csv"
+output_file = "findigs_jan_2025_contracts.csv"
 
 # Write the list of dictionaries to a CSV file
 with open(output_file, mode="w", newline="") as file:
