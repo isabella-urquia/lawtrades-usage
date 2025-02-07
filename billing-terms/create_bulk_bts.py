@@ -65,7 +65,7 @@ def process_file(input_file):
                 line_item_name = dict["line_item_name"]
                 line_item_note = dict["line_item_note"]
                 manuafcturer_id = dict["manufacturer_id"]
-                integration_id = dict.get("item_id", "None")
+                integration_name = dict.get("integration_name", "None")
                 amount = dict["amount"]
                 invoice_type = dict.get("invoice_type", None) # "BILL" if remittance
                 
@@ -83,7 +83,7 @@ def process_file(input_file):
                     "lineItemName": line_item_name,
                     "lineItemNote": line_item_note,
                     "manufacturerId": manuafcturer_id,
-                    "integrationItemName": integration_id,
+                    "integrationItemName": integration_name,
                     "amount": amount,
                     "revenueStartDate": rs_start_date,
                     "revenueEndDate": rs_end_date,
@@ -124,7 +124,7 @@ def process_file(input_file):
                     "lineItemName": line_item_name,
                     "lineItemNote": line_item_note,
                     "manufacturerId": manuafcturer_id,
-                    "integrationItemName": integration_id,
+                    "integrationItemName": integration_name,
                     "amount": amount,
                     "revenueStartDate": rs_start_date,
                     "revenueEndDate": rs_end_date,
