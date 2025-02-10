@@ -25,6 +25,45 @@ def customer_exists(customer_id,):
     row = cursor.fetchone()
     return True if row else False # True if customer exists, False otherwise
 
+def upsert_main_email(customer_id, email):
+    try:
+        # Fetch the existing row
+        cursor.execute(
+            "SELECT id, email FROM contacts_v2 WHERE customer_id = %s "
+            "AND deleted_at IS NULL AND \"isPrimaryContactForSource\" = 'TRUE' "
+            "AND email_sending_type = 'TO'",
+            (customer_id,)
+        )
+        row = cursor.fetchone()
+
+        if row:
+            existing_id, existing_email = row
+            if existing_email != email:
+                # Update if email is different
+                cursor.execute(
+                    "UPDATE contacts_v2 SET email = %s WHERE id = %s",
+                    (email, existing_id)
+                )
+                conn.commit()
+                return True  # Successfully updated
+            return False  # No update needed (email already matches)
+
+        else:
+            # Insert new record if no existing row
+            new_id = uuid4().hex
+            cursor.execute(
+                "INSERT INTO contacts_v2 (id, customer_id, email, source, \"isPrimaryContactForSource\", email_sending_type) "
+                "VALUES (%s, %s, %s, %s, %s, %s)",
+                (new_id, customer_id, email, "TABS", "TRUE", "TO")
+            )
+            conn.commit()
+            return cursor.rowcount > 0  # Return True if insert was successful
+
+    except psycopg2.Error as e:  # Catch database-related errors
+        print(f"Database error: {e}")
+        return False
+
+
 def add_cc_email(customer_id, email):
     try:
         new_id = uuid4().hex
@@ -50,6 +89,10 @@ if __name__ == "__main__":
     for row in rows:
         customer_id = row['customer_id']
         if customer_exists(customer_id):
+            if row['email']:
+                email = row['email']
+                if not upsert_main_email(customer_id, email): # If an error occurred, add to failed_rows
+                    failed_rows.append(row)               
             if row['cc_email_1']:
                 cc_email = row['cc_email_1']
                 if not add_cc_email(customer_id, cc_email): # If an error occurred, add to failed_rows
