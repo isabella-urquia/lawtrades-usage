@@ -94,8 +94,8 @@ def process_file(input_file):
 
             # New batch so send the data_list with all BTs and reset data_list for thr next batch
             else:
-                url = f"http://localhost:3101/billingSchedule/bulk"
-                body = {'data': data_list, 'customerId': customer_id, 'contractId': contract_id, 'isRemittance': is_remittance}
+                url = f"http://localhost:3101/contracts/{contract_id}/billing-schedules/bulk"
+                body = {'data': data_list,'isRemittance': is_remittance}
                 json_string = json.dumps(body, indent=2)
                 headers = {'Content-Type': 'application/json', 'Authorization': authorization}
                 response = requests.post(url, data=json_string, headers=headers)
@@ -134,8 +134,8 @@ def process_file(input_file):
                 data_list.append(json_object)
 
         if data_list:
-            url = f"http://localhost:3101/billingSchedule/bulk"
-            body = {'data': data_list, 'customerId': customer_id, 'contractId': contract_id, 'isRemittance': is_remittance}
+            url = f"http://localhost:3101/contracts/{contract_id}/billing-schedules/bulk"
+            body = {'data': data_list,'isRemittance': is_remittance}
             json_string = json.dumps(body, indent=2)
             headers = {'Content-Type': 'application/json', 'Authorization': authorization}
             response = requests.post(url, data=json_string, headers=headers)
