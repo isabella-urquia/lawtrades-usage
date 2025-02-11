@@ -47,7 +47,12 @@ if __name__ == "__main__":
     for dict in dicts:
         bt_id = dict["bt_id"]
         integration_item_name = dict["integration_item"]
-        if not integration_item_name:
+        if not integration_item_name: # Assign None as integration item
+            change_integration_item(None, bt_id)
+            update_invoice_item(None, bt_id)
+            new_row = dict
+            new_row["new_ii_id"] = ii_id
+            output_data.append(new_row)
             continue
         ii_id = integration_item_id(integration_item_name)
 
