@@ -45,7 +45,7 @@ if __name__ == "__main__":
             # Contract wasn't created for this customer yet so create it first
             contract_id = uuid4()
             cursor.execute("INSERT INTO contracts (id, customer_id, uploader_id, aws_s3_key, manufacturer_id, name, file_name, last_modified_by, last_modified_by_type, deleted_at, bulk_upload_id, contract_summary) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", 
-                    (contract_id.hex, customer_id, None, aws_s3_key, manufacturer_id, None, None, None, None, None, None, None))
+                    (contract_id.hex, customer_id, None, aws_s3_key, manufacturer_id, "", None, None, None, None, None, None))
 
             contract_id = contract_id.hex
 
