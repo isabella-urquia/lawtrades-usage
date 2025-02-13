@@ -4,6 +4,7 @@ from uuid import uuid4
 import os
 import sys
 import json
+import sys
 
 conn = psycopg2.connect(
     dbname="core",
@@ -24,7 +25,7 @@ if __name__ == "__main__":
     dicts = csv_to_list_of_dicts(str(sys.argv[1]))
 
     manufacturer_custom_fields_id_1 = uuid4()
-    merchant_id = '96452be5-c025-4264-ae46-b651b9e250b9' # Merchant is GG4L
+    merchant_id = sys.argv[2]
     cursor.execute("INSERT into manufacturer_custom_fields (id, manufacturer_id, name, send_to_customer, send_to_erp) values (%s, %s, %s, %s, %s) returning id", (manufacturer_custom_fields_id_1.hex, merchant_id, 'Segment', True, False))
     new_manufacturer_custom_field = cursor.fetchone()[0]
     
