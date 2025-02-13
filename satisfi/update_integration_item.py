@@ -16,7 +16,7 @@ cursor = conn.cursor()
 
 def integration_item_id(name):
     cursor.execute("""
-        SELECT id FROM items WHERE manufacturer_id = 'd797a8dc-6ad9-49f7-9823-7d43a49ab296' AND name = %s
+        SELECT id FROM items WHERE manufacturer_id = '<MANUFACTURER_ID_HERE>' AND name = %s
     """, (name,))
     row = cursor.fetchone()
     return row[0] if row else None
