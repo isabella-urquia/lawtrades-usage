@@ -10,7 +10,7 @@ conn = psycopg2.connect(
     user="rw",
     password=os.getenv('SCRIPT_DB_PASSWORD'),
     port=5432,
-    host=os.getenv('DATABASE_URL'),
+    host="core.cluster-cizo3akkr249.us-east-1.rds.amazonaws.com",
     sslmode='require'
 )
 cursor = conn.cursor()
@@ -25,22 +25,22 @@ if __name__ == "__main__":
     output_csv = []
 
     merchant_name = "Findigs"
-    merchant_id = "76310fa7-758a-4062-307e-a9e75497b770"
+    merchant_id = "2972d5be-f370-acc6-978f-8d4ec4eb5f24"
 
-    if (len(sys.argv) == 3):
-        dicts = csv_to_list_of_dicts(str(sys.argv[1]))
+    dicts = csv_to_list_of_dicts(("/Users/chiragdas/Downloads/Create Findigs Customers bulk - 2.18.24 - Create Customers.csv"))
         
     for dict in dicts:
         customer_name = dict["customer_name"]
-        first_name = dict["first_name"]
-        last_name = dict["last_name"]
+        first_name = dict.get("first_name", "None")
+        last_name = dict.get("last_name", "None")
         email = dict["email"]
         address_line_1 = dict["billing_address_street_address_line_1"]
-        address_line_2 = dict["billing_address_street_address_line_2"]
+        address_line_2 = dict.get("Street address line 2", "None")
         city = dict["billing_address_street_address_city"]
         state = dict["billing_address_street_address_state"]
         zip_code = dict["billing_address_street_address_zip_code"]
         country = dict["billing_address_street_address_country"]
+        external_id = dict["external_id"]
 
         customer_id = uuid4()
         address_id = uuid4()
@@ -53,6 +53,9 @@ if __name__ == "__main__":
         new_parent_customer_id = cursor.fetchone()[0]
 
         cursor.execute("INSERT into customer_address (customer_id, address_id, is_default_billing, is_default_shipping) values (%s, %s, %s, %s)", (new_parent_customer_id, new_address_id, True, True))
+
+        cursor.execute("INSERT into customer_external_ids (customer_id, external_id,source_type,customer_external_type) values (%s, %s, %s, %s)", (customer_id.hex, external_id, 'QUICKBOOKS', 'VENDOR'))
+
 
         cursor.execute("INSERT into contacts_v2 (id, first_name, last_name, customer_id, email) values (%s, %s, %s, %s, %s) returning id", (contacts_id.hex, first_name, last_name, new_parent_customer_id, email))
         new_parent_contact_id = cursor.fetchone()[0]
@@ -67,7 +70,7 @@ if __name__ == "__main__":
     conn.commit()
 
     # Output file in CSV format
-    filename = str(sys.argv[2])
+    filename = 'Feb_Customers_created.csv'
     # Writing to the CSV file
     with open(filename, mode='w', newline='') as file:
         fields = ["customer_id", "name", "contact_id"]

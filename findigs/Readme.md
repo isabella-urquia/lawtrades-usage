@@ -10,3 +10,5 @@ if some package that you are trying to use doesnt exist, then download it using 
 python3 findigs/[script name]
 
 control c = ends the script
+
+pip install -r requirements.txt

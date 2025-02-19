@@ -9,12 +9,12 @@ conn = psycopg2.connect(
     user="rw",
     password=os.getenv('SCRIPT_DB_PASSWORD'),
     port=5432,
-    host="core.cluster-c1gkmwasa8f7.us-east-1.rds.amazonaws.com",
+    host="core.cluster-cizo3akkr249.us-east-1.rds.amazonaws.com",
     sslmode='require'
 )
 cursor = conn.cursor()
 
-manufacturer_id = "76310fa7-758a-4062-307e-a9e75497b770" # Findigs
+manufacturer_id = "2972d5be-f370-acc6-978f-8d4ec4eb5f24" # Findigs
 
 def customer_exists(customer_id):
     if not customer_id:
@@ -35,7 +35,7 @@ def csv_to_list_of_dicts(path):
 
 
 if __name__ == "__main__":
-    path = sys.argv[1]
+    path = "Feb_Customers_created.csv"
     dicts = csv_to_list_of_dicts(path)
     output_data = []
 
@@ -60,13 +60,13 @@ if __name__ == "__main__":
                 output_data.append({
                     "contract_id": contract_id.hex,
                     "customer_id": customer_id,
-                    "customer_name": dict["customer_name"],
-                    "invoice_date": dict["invoice_date"],
-                    "invoice_id": dict["invoice_id"],
-                    "type_description": dict["type_description"],
-                    "description": dict["description"],
-                    "amount": dict["amount"],
-                    "revenue_start_date": dict["revenue_start_date"]
+                    # "customer_name": dict["customer_name"],
+                    # "invoice_date": dict["invoice_date"],
+                    # "invoice_id": dict["invoice_id"],
+                    # "type_description": dict["type_description"],
+                    # "description": dict["description"],
+                    # "amount": dict["amount"],
+                    # "revenue_start_date": dict["revenue_start_date"]
                 })
 
         else:
@@ -77,7 +77,7 @@ if __name__ == "__main__":
 cursor.close()
 conn.close()
 
-output_file = "findigs_jan_2025_contracts.csv"
+output_file = "findigs_feb_2025_contracts.csv"
 
 # Write the list of dictionaries to a CSV file
 with open(output_file, mode="w", newline="") as file:
