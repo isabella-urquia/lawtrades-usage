@@ -16,10 +16,10 @@ conn = psycopg2.connect(
 cursor = conn.cursor()
 
 # Folder containing PDF files
-PDF_FOLDER = r"/Users/chiragdas/Downloads/Lawtrades_pdf_attachments_test2_feb18"
+PDF_FOLDER = r"/Users/chiragdas/Downloads/Lawtrade_pdfs_batch2"
 
 # Output CSV file
-CSV_FILE = "Lawtrades_invoices_4.csv"
+CSV_FILE = "Lawtrades_invoices_5.csv"
 
 # Fixed Merchant ID
 Manufacturer_id = "7af68809-96ba-4de9-a1a0-4be7b103a491"
@@ -39,12 +39,12 @@ def existsInvoice(company_name):
         SELECT invoices.id
         FROM invoices
         JOIN customers ON invoices.customer_id = customers.id
-        WHERE customers.name = %s
+        WHERE customers.name like %s
         AND invoices.issue_date = %s
         AND customers.manufacturer_id = '7af68809-96ba-4de9-a1a0-4be7b103a491'
     """
     
-    cursor.execute(query, (company_name, start_date))  # Correct tuple usage
+    cursor.execute(query, (company_name + "%", start_date))  # Correct tuple usage
     row = cursor.fetchone()  # Fetch one row
 
     return row[0] if row else None  # Return invoice ID if found, otherwise None

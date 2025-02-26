@@ -27,7 +27,7 @@ if __name__ == "__main__":
     merchant_name = "Findigs"
     merchant_id = "2972d5be-f370-acc6-978f-8d4ec4eb5f24"
 
-    dicts = csv_to_list_of_dicts(("/Users/chiragdas/Downloads/Create Findigs Customers bulk - 2.18.24 - Create Customers.csv"))
+    dicts = csv_to_list_of_dicts(("/Users/chiragdas/Downloads/Findigs_test.csv"))
         
     for dict in dicts:
         customer_name = dict["customer_name"]
@@ -44,7 +44,7 @@ if __name__ == "__main__":
 
         customer_id = uuid4()
         address_id = uuid4()
-        contacts_id = uuid4()
+        contact_id = uuid4()
 
         cursor.execute("INSERT into addresses (id, manufacturer_id, address_line1, address_line2, city, state, country, zip) values (%s, %s, %s, %s, %s, %s, %s, %s) returning id", (address_id.hex, merchant_id, address_line_1, address_line_2, city, state, country, zip_code))
         new_address_id = cursor.fetchone()[0]
@@ -57,7 +57,7 @@ if __name__ == "__main__":
         cursor.execute("INSERT into customer_external_ids (customer_id, external_id,source_type,customer_external_type) values (%s, %s, %s, %s)", (customer_id.hex, external_id, 'QUICKBOOKS', 'VENDOR'))
 
 
-        cursor.execute("INSERT into contacts_v2 (id, first_name, last_name, customer_id, email) values (%s, %s, %s, %s, %s) returning id", (contacts_id.hex, first_name, last_name, new_parent_customer_id, email))
+        cursor.execute("INSERT into contacts_v2 (id, first_name, last_name, customer_id, email) values (%s, %s, %s, %s, %s) returning id", (contact_id.hex, first_name, last_name, new_parent_customer_id, email))
         new_parent_contact_id = cursor.fetchone()[0]
 
         cursor.execute("UPDATE customers set primary_billing_contact_id = %s where id = %s and deleted_at is NULL", (new_parent_contact_id, new_parent_customer_id))
@@ -66,7 +66,7 @@ if __name__ == "__main__":
         print("New parent customer: " + new_parent_customer_id)
         print("New contact for parent customer: " + new_parent_contact_id)
 
-        output_csv.append({"customer_id": new_parent_customer_id, "name": customer_name})
+        output_csv.append({"customer_id": new_parent_customer_id, "name": customer_name, "contact_id": contact_id})
     conn.commit()
 
     # Output file in CSV format

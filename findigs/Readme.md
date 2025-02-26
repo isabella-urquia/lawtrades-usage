@@ -1,7 +1,8 @@
 Findigs remittances ingest
 
-
+python3 -m venv venv
 source .venv/bin/activate
+pip install -r requirements.txt
 
 export SCRIPT_DB_PASSWORD=[PWD] (make sure theres no spaces)
 
@@ -11,4 +12,4 @@ python3 findigs/[script name]
 
 control c = ends the script
 
-pip install -r requirements.txt
+

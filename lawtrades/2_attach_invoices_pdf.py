@@ -40,5 +40,5 @@ def process_csv(file_path):
             send_request(manufacturer_id, invoice_id, filepath)  # Send file to API
 
 # Specify CSV file location
-csv_file = "/Users/chiragdas/Downloads/Lawtrades_invoices_feb15th_test.csv"  # Update with actual file path
+csv_file = "/Users/chiragdas/Downloads/Lawtrades_invoices_10.csv"  # Update with actual file path
 process_csv(csv_file)

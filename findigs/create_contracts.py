@@ -53,13 +53,13 @@ if __name__ == "__main__":
             if not contract_exists(customer_id):
                 # Customer exists and contract wasn't created for this customer yet
                 contract_id = uuid4()
-                cursor.execute("INSERT INTO contracts (id, customer_id, uploader_id, aws_s3_key, manufacturer_id, name, file_name, last_modified_by, last_modified_by_type, deleted_at, bulk_upload_id, contract_summary) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", 
-                        (contract_id.hex, customer_id, None, aws_s3_key, manufacturer_id, None, None, None, None, None, None, None))
+                cursor.execute("INSERT INTO contracts (id, customer_id, uploader_id, aws_s3_key, manufacturer_id, status, name, file_name, last_modified_by, last_modified_by_type, deleted_at, bulk_upload_id, contract_summary) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)", 
+                        (contract_id.hex, customer_id, None, aws_s3_key, manufacturer_id, "PROCESSED", None, None, None, None, None, None, None))
                 customer_contracts[customer_id] = contract_id
 
                 output_data.append({
-                    "contract_id": contract_id.hex,
-                    "customer_id": customer_id,
+                    "contract_id": contract_id,
+                    "customer_id": customer_id
                     # "customer_name": dict["customer_name"],
                     # "invoice_date": dict["invoice_date"],
                     # "invoice_id": dict["invoice_id"],
