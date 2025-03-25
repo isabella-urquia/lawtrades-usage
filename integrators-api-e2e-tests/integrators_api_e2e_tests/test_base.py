@@ -8,6 +8,7 @@ class TestBase:
     BASE_URL = "https://integrators.dev.api.tabsplatform.com/v3"
     # BASE_URL = "http://localhost:5000/v3"
 
+
     # Replace with your actual API key or token if authentication is required
     API_TOKEN = "test_tabs_sk_KTCeKkVVh80PB17EtSfhpY0pgZu7D7PsPmAC5kRfOCQSK84JMyJzXqqbhg0bdReP"
 
@@ -15,7 +16,7 @@ class TestBase:
     def get_headers():
         """Return headers required for API requests"""
         return {
-            # "Content-Type": "application/json",
+            "Content-Type": "application/json",
             "Accept": "application/json",
             "Authorization": TestBase.API_TOKEN
         }
@@ -83,16 +84,8 @@ class TestBase:
 
         return True
     
-    def generate_random_string(length: int = 10) -> str:
-        """
-        Generate a random string of a given length.
-        
-        Args:
-            length (int, optional): Length of the random string. Defaults to 10.
-            
-        Returns:
-            str: A random string containing letters and digits
-        """
+    def generate_random_string(self, length=10):
+        """Generate a random string of a given length"""
         characters = string.ascii_letters + string.digits
         random_string = ''.join(random.choice(characters) for i in range(length))
         return random_string

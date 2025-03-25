@@ -78,7 +78,7 @@ def test_delete_endpoint():
     Test the DELETE /customers/{id} endpoint.
     
     This test verifies:
-    1. The endpoint returns a 200  status code for successful deletion
+    1. The endpoint returns a 200 or 204 status code for successful deletion
     2. The response includes a valid transaction ID header
     3. The endpoint correctly handles deletion of a specific customer by ID
     """
@@ -88,11 +88,11 @@ def test_delete_endpoint():
   
     response = requests.delete(url, headers=TestBase.get_headers())
     # Assuming a successful DELETE returns status code 200 or 204
-    assert response.status_code in [200], f"Expected 200, got {response.status_code}"
+    assert response.status_code in [200, 204], f"Expected 200 or 204, got {response.status_code}"
     TestBase.validate_transaction_id(response)
 
 @pytest.mark.integration
-def test_post_customers_endpoint():
+def test_create_customers_endpoint():
     """
     Test the POST /customers endpoint.
     
