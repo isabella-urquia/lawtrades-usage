@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "integrators-api-e2e-tests"
+version = "0.1.0"
+description = "End-to-end tests for integrators API"
+authors = ["Your Name <your.email@example.com>"]
+
+[tool.poetry.dependencies]
+python = ">=3.8.1,<4.0"
+pytest = "^7.3.1"
+requests = "^2.31.0"
+
+[tool.poetry.group.dev.dependencies]
+black = "^23.3.0"
+flake8 = "^6.0.0"
+pytest-cov = "^4.1.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api" 

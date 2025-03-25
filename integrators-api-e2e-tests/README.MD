@@ -1,53 +1,88 @@
 # Integrators API E2E Tests
 
-This directory contains end-to-end tests for the Integrators API using Python.
+This repository contains end-to-end tests for the integrators API.
 
 ## Setup
 
-1. Create and activate a virtual environment (recommended):
+### Prerequisites
 
+- Python 3.8.1 or higher
+- [Poetry](https://python-poetry.org/docs/#installation)
+
+### Installation
+
+1. Navigate to the tests directory:
 ```bash
-# Create virtual environment
-python3 -m venv venv
-
-# Activate virtual environment (DO NOT use sudo)
-# On macOS/Linux:
-source venv/bin/activate
-# On Windows:
-# venv\Scripts\activate
+cd integrators-api-e2e-tests
 ```
 
-2. Install the package in development mode:
+2. Install Poetry if you haven't already:
 ```bash
-# From the integrators-api-e2e-tests directory
-pip install -e .
+curl -sSL https://install.python-poetry.org | python3 -
 ```
 
 3. Install dependencies:
 ```bash
-pip3 install -r requirements.txt
+poetry install
 ```
 
-4. Run tests:
+### Running Tests
+
+Make sure you're in the `integrators-api-e2e-tests` directory, then:
+
+Run all tests with default output:
 ```bash
-# Run all tests
-pytest
-
-# Run integration tests with verbose output
-pytest -m integration -v
-
-# Run tests with console output (shows print statements and logs)
-pytest -v -s -m integration
-
-# Run tests with console output and detailed logging
-pytest -v -s -m integration --log-cli-level=INFO
+poetry run pytest
 ```
 
-5. Deactivate and clean up when done:
+Run tests with detailed output (shows logs and print statements):
 ```bash
-deactivate
-rm -rf venv
+poetry run pytest -v
 ```
+
+Run tests with maximum verbosity (shows extra test details):
+```bash
+poetry run pytest -vv
+```
+
+Show live logs during test execution:
+```bash
+poetry run pytest --log-cli-level=INFO
+```
+
+Show debug logs during test execution:
+```bash
+poetry run pytest --log-cli-level=DEBUG
+```
+
+Run tests with coverage:
+```bash
+poetry run pytest --cov=tests
+```
+
+### Development
+
+Format code:
+```bash
+poetry run black .
+```
+
+Lint code:
+```bash
+poetry run flake8
+```
+
+## Contributing
+
+1. Navigate to the project directory and create a virtual environment:
+```bash
+cd integrators-api-e2e-tests
+poetry shell
+```
+
+2. Make your changes
+3. Run tests
+4. Submit a pull request
 
 ## Notes
 - Never use sudo when activating a virtual environment
