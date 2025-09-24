@@ -602,7 +602,7 @@ def exists_invoice_database(company_id, fallback_invoice_id, issue_date=None):
         if not conn:
             st.error("Database connection failed")
             return fallback_invoice_id
-        
+            
         cursor = conn.cursor()
         
         # Build the query based on whether we have an issue date
@@ -613,7 +613,7 @@ def exists_invoice_database(company_id, fallback_invoice_id, issue_date=None):
                 AND status != 'DELETED' 
                 AND invoice_type = 'INVOICE'
                 AND DATE(issue_date) = %s
-                ORDER BY issue_date DESC 
+                ORDER BY issue_date DESC tabs
                 LIMIT 1
             """
             cursor.execute(query, (company_id, issue_date))
@@ -640,29 +640,110 @@ def exists_invoice_database(company_id, fallback_invoice_id, issue_date=None):
             date_desc = issue_date.strftime('%Y-%m-%d') if issue_date else "current period"
             st.warning(f"No invoice found for company {company_id} on {date_desc} (database)")
             return fallback_invoice_id
-            
+        
     except Exception as e:
         st.error(f"Database lookup failed for {company_id}: {str(e)}")
         return fallback_invoice_id
 
+def find_invoice_by_talent(company_id, talent_name, issue_date=None):
+    """Find invoice ID by matching talent name to invoice line items (API only - external facing)"""
+    if not company_id or company_id.lower() == "nan" or not is_valid_uuid(company_id):
+        st.warning(f"Invalid company ID: {company_id}")
+        return None
+    
+    if not talent_name or talent_name.strip() == "":
+        st.warning(f"No talent name provided for matching")
+        return None
+    
+    # API-only method (external facing)
+    api_token = st.session_state.get('api_key', '')
+    if not api_token:
+        st.error("API key required for talent matching")
+        return None
+    
+    try:
+        # Try to use cached invoices first
+        cache_key = f"invoice_cache_{api_token[:10]}"
+        cached_invoices = st.session_state.get(cache_key, [])
+        
+        if cached_invoices:
+            # Use cached data for fast lookup
+            invoices = cached_invoices
+            
+            # Filter invoices for this customer and date
+            valid_invoices = []
+            for invoice in invoices:
+                invoice_customer_id = invoice.get('customerId', '')
+                invoice_date_str = invoice.get('issueDate', '')
+                
+                # Check customer match and status
+                if (invoice_customer_id == company_id and 
+                    invoice.get('status', '').upper() != 'DELETED' and 
+                    invoice.get('source', '').upper() == 'TABS'):
+                    
+                    # If we have a specific date, filter by date
+                    if issue_date and invoice_date_str:
+                        try:
+                            if 'T' in invoice_date_str:
+                                invoice_date = pd.to_datetime(invoice_date_str).date()
+                            else:
+                                invoice_date = pd.to_datetime(invoice_date_str).date()
+                            
+                            if invoice_date != issue_date:
+                                continue
+                        except:
+                            pass  # If date parsing fails, continue checking
+                    
+                    # Check if talent name matches any line item
+                    line_items = invoice.get('lineItems', [])
+                    talent_found = False
+                    
+                    for line_item in line_items:
+                        item_name = str(line_item.get('name', '')).lower()
+                        item_description = str(line_item.get('description', '')).lower()
+                        talent_name_lower = talent_name.lower()
+                        
+                        # Check if talent name appears in item name or description
+                        if (talent_name_lower in item_name or 
+                            talent_name_lower in item_description or
+                            item_name in talent_name_lower or
+                            item_description in talent_name_lower):
+                            talent_found = True
+                            break
+                    
+                    if talent_found:
+                        valid_invoices.append(invoice)
+            
+            if valid_invoices:
+                # Sort by issue date (most recent first) and return the first one
+                valid_invoices.sort(key=lambda x: x.get('issueDate', ''), reverse=True)
+                selected_invoice = valid_invoices[0]
+                invoice_id = selected_invoice.get('id')
+                actual_issue_date = selected_invoice.get('issueDate', 'Unknown')
+                invoice_number = selected_invoice.get('invoiceNumber', 'N/A')
+                
+                st.success(f"✅ Found invoice by talent match: {invoice_id} (Invoice #{invoice_number}) for talent '{talent_name}' (issued: {actual_issue_date}) (CACHED)")
+                return invoice_id
+        
+        # If no talent match found, return None
+        st.info(f"💡 No invoice found matching talent '{talent_name}'.")
+        return None
+        
+    except Exception as e:
+        st.error(f"Talent matching failed for {company_id}: {str(e)}")
+        return None
+
 def exists_invoice(company_id, fallback_invoice_id, issue_date=None):
-    """Check if invoice exists via API or database, return invoice ID if found"""
+    """Check if invoice exists via API, return invoice ID if found (external facing - API only)"""
     if not company_id or company_id.lower() == "nan" or not is_valid_uuid(company_id):
         st.warning(f"Invalid company ID: {company_id}")
         return fallback_invoice_id
     
-    # Check if user wants to use API or database
-    use_api = st.session_state.get('use_api_lookup', False)
-    
-    if not use_api:
-        # Use original database method
-        return exists_invoice_database(company_id, fallback_invoice_id, issue_date)
-    
-    # Use API method
+    # API-only method (external facing)
     api_token = st.session_state.get('api_key', '')
     if not api_token:
-        st.warning("API key not configured for invoice lookup, falling back to database")
-        return exists_invoice_database(company_id, fallback_invoice_id, issue_date)
+        st.error("API key required for invoice lookup")
+        return fallback_invoice_id
     
     try:
         # Try to use cached invoices first
@@ -712,13 +793,14 @@ def exists_invoice(company_id, fallback_invoice_id, issue_date=None):
                 st.success(f"✅ Found invoice ID {invoice_id} (Invoice #{invoice_number}) for company {company_id} (issued: {actual_issue_date}) (CACHED)")
                 return invoice_id
         
-        # If no cached data or no match found, fall back to database
-        st.warning("No cached invoice found, falling back to database lookup")
-        return exists_invoice_database(company_id, fallback_invoice_id, issue_date)
+        # If no cached data or no match found, return fallback
+        st.warning("No cached invoice found")
+        return fallback_invoice_id
         
     except Exception as e:
         st.error(f"API lookup failed for {company_id}: {str(e)}")
         return fallback_invoice_id
+
 
 def upload_attachment(customer_id, invoice_id, filepath, talent_name=None):
     """Upload PDF attachment to invoice via API"""
@@ -1357,6 +1439,24 @@ def show_csv_transformation_tab():
                         mime="text/csv"
                     )
                     
+                    # Upload to Tabs button
+                    st.markdown("---")
+                    st.markdown("### 📤 Upload to Tabs Platform")
+                    st.markdown(f"""
+                    <a href="https://app.tabsplatform.com/merchant/usage/all?page=1&sort=uploadTime&sortDir=desc" target="_blank">
+                        <button style="
+                            background-color: #FF6B6B;
+                            color: white;
+                            border: none;
+                            padding: 10px 20px;
+                            border-radius: 5px;
+                            cursor: pointer;
+                            font-size: 16px;
+                            font-weight: bold;
+                        ">📤 Upload Usage</button>
+                    </a>
+                    """, unsafe_allow_html=True)
+                    
         except Exception as e:
             st.error(f"Error processing CSV: {e}")
 
@@ -1685,11 +1785,29 @@ def show_pdf_workflow_tab():
             )
         with col2:
             if enable_split:
-                split_customers = st.text_area(
-                    "Split Customer Names (one per line)",
-                    placeholder="CompanyA\nCompanyB\nCompanyC",
-                    help="Enter company names that need split invoices by talent. One name per line."
-                )
+                # Get unique company names from the data for dropdown selection
+                unique_companies = df['Company_Name'].dropna().unique().tolist()
+                unique_companies.sort()
+                
+                if unique_companies:
+                    st.info(f"📋 Found {len(unique_companies)} companies in your data")
+                    
+                    split_customers_list = st.multiselect(
+                        "Select Companies for Split Invoices",
+                        options=unique_companies,
+                        help="Select which companies need split invoices by talent"
+                    )
+                    
+                    if split_customers_list:
+                        st.success(f"✅ {len(split_customers_list)} customers selected for split invoices")
+                    else:
+                        st.info("ℹ️ No companies selected - split invoices will not be generated")
+                    
+                    # Convert list to string format for backward compatibility
+                    split_customers = '\n'.join(split_customers_list) if split_customers_list else ""
+                else:
+                    st.warning("No company names found in the data")
+                    split_customers = ""
         
         # Clean and expand data
         if st.button("Process Data & Generate PDFs", type="primary"):
@@ -1881,148 +1999,137 @@ def show_pdf_workflow_tab():
             st.warning("⚠️ Please generate PDFs in Step 2 first.")
             return
         
-        st.info("Generate CSV mapping with database or API lookup for invoice IDs")
+        st.info("Generate CSV mapping with API lookup for invoice IDs")
         
-        # Simple API/Database toggle
-        st.subheader("Invoice Lookup Method")
+        # API-only configuration
+        st.subheader("API Configuration")
+        st.info("🌐 Using API for invoice lookup")
         
-        use_api = st.checkbox(
-            "🌐 Use API for Invoice Lookup", 
-            help="Check to use API, uncheck to use database (original method)",
-            value=st.session_state.get('use_api_lookup', False)
+        # Always use API
+        st.session_state.use_api_lookup = True
+        
+        api_key_input = st.text_input(
+            "API Key",
+            type="password",
+            help="Enter your TABS API key for invoice lookup",
+            value=st.session_state.get('api_key', ''),
+            key="csv_mapping_api_key"
         )
         
-        # Store the choice in session state
-        st.session_state.use_api_lookup = use_api
+        # Store API key in session state
+        if api_key_input:
+            st.session_state.api_key = api_key_input
         
-        if use_api:
-            st.info("🌐 Using API for invoice lookup")
-            
-            # Only show API key input when using API
-            st.subheader("🔑 API Configuration")
-            api_key_input = st.text_input(
-                "API Key",
-                type="password",
-                help="Enter your TABS API key for invoice lookup",
-                value=st.session_state.get('api_key', ''),
-                key="csv_mapping_api_key"
-            )
-            
-            # Store API key in session state
-            if api_key_input:
-                st.session_state.api_key = api_key_input
-            
-            if not api_key_input:
-                st.warning("⚠️ Please enter your API key to proceed with API lookup")
-                return
-            
-            # Smart caching system for API invoices
-            st.subheader("📋 Invoice Cache Management")
-            
-            # Check if we have cached invoices (with better persistence)
-            cache_key = f"invoice_cache_{api_key_input[:10]}"
-            
-            # Try to get from session state first
-            cached_invoices = st.session_state.get(cache_key, [])
-            cache_timestamp = st.session_state.get(f"{cache_key}_timestamp", None)
-            
-            # If no cache in session state, try to load from file
-            if not cached_invoices:
+        if not api_key_input:
+            st.warning("⚠️ Please enter your API key to proceed with API lookup")
+            return
+        
+        # Talent matching is automatic for split invoices
+        st.session_state.talent_matching_enabled = True
+        
+        # Smart caching system for API invoices
+        st.subheader("📋 Invoice Cache Management")
+        
+        # Check if we have cached invoices (with better persistence)
+        cache_key = f"invoice_cache_{api_key_input[:10]}"
+        
+        # Try to get from session state first
+        cached_invoices = st.session_state.get(cache_key, [])
+        cache_timestamp = st.session_state.get(f"{cache_key}_timestamp", None)
+        
+        # If no cache in session state, try to load from file
+        if not cached_invoices:
+            try:
+                import json
+                cache_file = f"invoice_cache_{api_key_input[:10]}.json"
+                if os.path.exists(cache_file):
+                    with open(cache_file, 'r') as f:
+                        cache_data = json.load(f)
+                        cached_invoices = cache_data.get('invoices', [])
+                        cache_timestamp_str = cache_data.get('timestamp')
+                        if cache_timestamp_str:
+                            cache_timestamp = datetime.fromisoformat(cache_timestamp_str)
+                    
+                    # Restore to session state
+                    st.session_state[cache_key] = cached_invoices
+                    st.session_state[f"{cache_key}_timestamp"] = cache_timestamp
+                    st.success(f"✅ Loaded {len(cached_invoices)} invoices from persistent cache")
+            except Exception as e:
+                st.warning(f"Could not load persistent cache: {e}")
+                cached_invoices = []
+                cache_timestamp = None
+        
+        col1, col2, col3 = st.columns([2, 1, 1])
+        
+        with col1:
+            if cached_invoices:
+                cache_age = datetime.now() - cache_timestamp if cache_timestamp else None
+                if cache_age:
+                    age_hours = cache_age.total_seconds() / 3600
+                    st.success(f"✅ Cache: {len(cached_invoices)} invoices cached ({age_hours:.1f} hours ago)")
+                else:
+                    st.success(f"✅ Cache: {len(cached_invoices)} invoices cached")
+            else:
+                st.warning("⚠️ No invoice cache found")
+                st.info("💡 Click 'Refresh Cache' to fetch all invoices from API (one-time setup)")
+        
+        with col2:
+            if st.button("🔄 Refresh Cache", help="Fetch fresh invoices from API"):
+                with st.spinner("Fetching all invoices from API (this may take a few minutes)..."):
+                    all_invoices = fetch_all_invoices_for_cache(api_key_input)
+                    if all_invoices:
+                        # Save to session state
+                        st.session_state[cache_key] = all_invoices
+                        st.session_state[f"{cache_key}_timestamp"] = datetime.now()
+                        
+                        # Also save to file for persistence
+                        try:
+                            import json
+                            cache_file = f"invoice_cache_{api_key_input[:10]}.json"
+                            cache_data = {
+                                'invoices': all_invoices,
+                                'timestamp': datetime.now().isoformat(),
+                                'count': len(all_invoices)
+                            }
+                            with open(cache_file, 'w') as f:
+                                json.dump(cache_data, f)
+                            st.success(f"✅ Cached {len(all_invoices)} invoices successfully! (Saved to file)")
+                        except Exception as e:
+                            st.success(f"✅ Cached {len(all_invoices)} invoices successfully! (File save failed: {e})")
+                        
+                        st.rerun()
+                    else:
+                        st.error("❌ Failed to fetch invoices")
+        
+        with col3:
+            if st.button("🗑️ Clear Cache", help="Clear cached invoices"):
+                # Clear from session state
+                if cache_key in st.session_state:
+                    del st.session_state[cache_key]
+                if f"{cache_key}_timestamp" in st.session_state:
+                    del st.session_state[f"{cache_key}_timestamp"]
+                
+                # Also clear from file
                 try:
-                    import json
                     cache_file = f"invoice_cache_{api_key_input[:10]}.json"
                     if os.path.exists(cache_file):
-                        with open(cache_file, 'r') as f:
-                            cache_data = json.load(f)
-                            cached_invoices = cache_data.get('invoices', [])
-                            cache_timestamp_str = cache_data.get('timestamp')
-                            if cache_timestamp_str:
-                                cache_timestamp = datetime.fromisoformat(cache_timestamp_str)
-                        
-                        # Restore to session state
-                        st.session_state[cache_key] = cached_invoices
-                        st.session_state[f"{cache_key}_timestamp"] = cache_timestamp
-                        st.success(f"✅ Loaded {len(cached_invoices)} invoices from persistent cache")
+                        os.remove(cache_file)
+                    st.success("✅ Cache cleared! (Both memory and file)")
                 except Exception as e:
-                    st.warning(f"Could not load persistent cache: {e}")
-                    cached_invoices = []
-                    cache_timestamp = None
-            
-            col1, col2, col3 = st.columns([2, 1, 1])
-            
-            with col1:
-                if cached_invoices:
-                    cache_age = datetime.now() - cache_timestamp if cache_timestamp else None
-                    if cache_age:
-                        age_hours = cache_age.total_seconds() / 3600
-                        st.success(f"✅ Cache: {len(cached_invoices)} invoices cached ({age_hours:.1f} hours ago)")
-                    else:
-                        st.success(f"✅ Cache: {len(cached_invoices)} invoices cached")
-                else:
-                    st.warning("⚠️ No invoice cache found")
-                    st.info("💡 Click 'Refresh Cache' to fetch all invoices from API (one-time setup)")
-            
-            with col2:
-                if st.button("🔄 Refresh Cache", help="Fetch fresh invoices from API"):
-                    with st.spinner("Fetching all invoices from API (this may take a few minutes)..."):
-                        all_invoices = fetch_all_invoices_for_cache(api_key_input)
-                        if all_invoices:
-                            # Save to session state
-                            st.session_state[cache_key] = all_invoices
-                            st.session_state[f"{cache_key}_timestamp"] = datetime.now()
-                            
-                            # Also save to file for persistence
-                            try:
-                                import json
-                                cache_file = f"invoice_cache_{api_key_input[:10]}.json"
-                                cache_data = {
-                                    'invoices': all_invoices,
-                                    'timestamp': datetime.now().isoformat(),
-                                    'count': len(all_invoices)
-                                }
-                                with open(cache_file, 'w') as f:
-                                    json.dump(cache_data, f)
-                                st.success(f"✅ Cached {len(all_invoices)} invoices successfully! (Saved to file)")
-                            except Exception as e:
-                                st.success(f"✅ Cached {len(all_invoices)} invoices successfully! (File save failed: {e})")
-                            
-                            st.rerun()
-                        else:
-                            st.error("❌ Failed to fetch invoices")
-            
-            with col3:
-                if st.button("🗑️ Clear Cache", help="Clear cached invoices"):
-                    # Clear from session state
-                    if cache_key in st.session_state:
-                        del st.session_state[cache_key]
-                    if f"{cache_key}_timestamp" in st.session_state:
-                        del st.session_state[f"{cache_key}_timestamp"]
-                    
-                    # Also clear from file
-                    try:
-                        cache_file = f"invoice_cache_{api_key_input[:10]}.json"
-                        if os.path.exists(cache_file):
-                            os.remove(cache_file)
-                        st.success("✅ Cache cleared! (Both memory and file)")
-                    except Exception as e:
-                        st.success(f"✅ Cache cleared! (File removal failed: {e})")
-                    
-                    st.rerun()
-            
-            # Show cache recommendations
-            if cached_invoices and cache_timestamp:
-                cache_age = datetime.now() - cache_timestamp
-                age_hours = cache_age.total_seconds() / 3600
-                if age_hours > 24:
-                    st.warning("⚠️ Cache is older than 24 hours. Consider refreshing for new invoices.")
-                elif age_hours > 6:
-                    st.info("ℹ️ Cache is older than 6 hours. New invoices may not be included.")
-                else:
-                    st.info("✅ Cache is fresh and up-to-date.")
-        else:
-            st.info("Using database for invoice lookup")
-            # Set empty API key when not using API
-            api_key_input = ""
+                    st.success(f"✅ Cache cleared! (File removal failed: {e})")
+                
+                st.rerun()
+        
+        # Show cache recommendations
+        if cached_invoices and cache_timestamp:
+            cache_age = datetime.now() - cache_timestamp
+            age_hours = cache_age.total_seconds() / 3600
+            if age_hours > 24:
+                st.warning("⚠️ Cache is older than 24 hours. Consider refreshing for new invoices.")
+            elif age_hours > 6:
+                st.info("ℹ️ Cache is older than 6 hours. New invoices may not be included.")
+            else:
+                st.info("✅ Cache is fresh and up-to-date.")
         
         # Date picker for issue date
         st.subheader("📅 Invoice Issue Date")
@@ -2063,9 +2170,18 @@ def show_pdf_workflow_tab():
                         st.write(f"📄 Processing {i}/{len(st.session_state.generated_pdfs)}: {filename}")
                         st.write(f"   Company ID: {company_id}")
                         
-                        # Check if invoice exists in database (only if we have a valid company ID)
+                        # Check if invoice exists (only if we have a valid company ID)
                         if company_id:
-                            invoice_id = exists_invoice(company_id, None, issue_date)
+                            # Check if talent matching is enabled
+                            talent_matching_enabled = st.session_state.get('talent_matching_enabled', False)
+                            talent_name = pdf_info.get('talent_name', '')
+                            
+                            if talent_matching_enabled and talent_name and talent_name.strip():
+                                # Use talent matching
+                                invoice_id = find_invoice_by_talent(company_id, talent_name, issue_date)
+                            else:
+                                # Use standard invoice lookup
+                                invoice_id = exists_invoice(company_id, None, issue_date)
                         else:
                             st.warning(f"   ⚠️ Cannot extract valid company ID from filename: {filename}")
                             invoice_id = None
@@ -2286,7 +2402,7 @@ def main():
         
         st.markdown("---")
         st.markdown("### 🔧 API Configuration")
-        st.info("API key is required for step-up pricing and bulk PDF upload functionality.")
+        st.info("API key is required for step-up pricing, CSV mapping, and bulk upload functionality.")
     
     # Main content
     st.title("Lawtrades Internal Tool")
