@@ -854,7 +854,7 @@ def upload_attachment(customer_id, invoice_id, filepath, talent_name=None):
         return False
 
 st.set_page_config(
-    page_title="Lawtrades Internal Tool",
+    page_title="Lawtrades Usage + PDF Workflow",
     page_icon="📄",
     layout="wide"
 )
@@ -2405,7 +2405,7 @@ def main():
         st.info("API key is required for step-up pricing, CSV mapping, and bulk upload functionality.")
     
     # Main content
-    st.title("Lawtrades Internal Tool")
+    st.title("Lawtrades Usage + PDF Workflow")
     st.markdown("Tool for CSV transformation and PDF generation/bulk attachment")
     
     # Create main tabs
