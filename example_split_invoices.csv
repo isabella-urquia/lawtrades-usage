@@ -1,0 +1,6 @@
+Manufacturer_id,Invoice_id,Filepath,Talent_Name,Talent_Sections
+7af68809-96ba-4de9-a1a0-4be7b103a491,12345,/path/to/company_report.pdf,John Doe,
+7af68809-96ba-4de9-a1a0-4be7b103a491,12346,/path/to/company_report.pdf,Jane Smith,
+7af68809-96ba-4de9-a1a0-4be7b103a491,12347,/path/to/single_talent_report.pdf,,
+7af68809-96ba-4de9-a1a0-4be7b103a491,12348,/path/to/multi_talent_report.pdf,,"[{'talent': 'John Doe', 'start': 1, 'end': 3}, {'talent': 'Jane Smith', 'start': 4, 'end': 6}]"
+
