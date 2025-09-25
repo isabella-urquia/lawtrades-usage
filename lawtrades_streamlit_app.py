@@ -1043,12 +1043,12 @@ def show_csv_transformation_tab():
             
             # Display the expected mappings
             st.info("""
-            **Expected Usage Columns:**
-            - Event_type_name → maps to **Talent**
-            - Value → maps to **sum(hours)**  
-            - Datetime → maps to **last_worklog_date**
-            - Customer_id → maps to **tabs_customer_id**
-            - Invoice → maps to **purchaseOrder**
+            **Required Usage Upload Columns:**
+            - Talent → maps to **event_type_name**
+            - sum(hours) → maps to **value**  
+            - last_worklog_date → maps to **datetime**
+            - tabs_customer_id → maps to **customer_id**
+            - purchaseOrder → maps to **invoice**
             """)
             
             col1, col2 = st.columns(2)
@@ -1057,13 +1057,13 @@ def show_csv_transformation_tab():
             available_cols = [''] + list(df_original.columns)
             
             with col1:
-                talent_col = st.selectbox("Talent Column", available_cols, help="Select the Talent column (maps to Event_type_name)")
-                hours_col = st.selectbox("Hours Column (sum(hours))", available_cols, help="Select the sum(hours) column (maps to Value)")
-                date_col = st.selectbox("Date Column (last_worklog_date)", available_cols, help="Select the last_worklog_date column (maps to Datetime)")
+                talent_col = st.selectbox("Event Type Column (Talent)", available_cols, help="Select the Event Type column (maps to Event_type_name)")
+                hours_col = st.selectbox("Hours Column (sum(hours))", available_cols, help="Select the Hours column (maps to Value)")
+                date_col = st.selectbox("Date Column (last_worklog_date)", available_cols, help="Select the Date column (maps to Datetime)")
                 
             with col2:
-                customer_id_col = st.selectbox("Customer ID Column (tabs_customer_id)", available_cols, help="Select the tabs_customer_id column")
-                invoice_col = st.selectbox("Invoice Column (purchaseOrder)", available_cols, help="Select the purchaseOrder column (maps to Invoice)")
+                customer_id_col = st.selectbox("Customer ID Column (tabs_customer_id)", available_cols, help="Select the Customer ID column (maps to customer_id)")
+                invoice_col = st.selectbox("Invoice Column (purchaseOrder)", available_cols, help="Select the Invoice column (maps to invoice)")
                 
                 # Required: Company name for reference
                 company_col = st.selectbox("Company Name Column (Company_Name)", available_cols, help="Select the Company_Name column for reference")
@@ -1077,7 +1077,7 @@ def show_csv_transformation_tab():
             
             enable_stepup_pricing = st.checkbox(
                 "Enable Step-Up Pricing",
-                help="Automatically append '-1' to lawyer names that have step-up pricing"
+                help="Automatically append '-1, -2, etc.' to lawyer names that have step-up pricing"
             )
             
             if enable_stepup_pricing:
@@ -1101,13 +1101,17 @@ def show_csv_transformation_tab():
                             st.session_state.dynamic_stepup_data = df
                             # Don't create stepup mapping since we're showing raw data
                             # st.session_state.dynamic_stepup_mapping = create_stepup_mapping_from_api(df)
-                            
-                            # Display the data
-                            st.subheader("📊 Step-Up Pricing Data")
-                            st.write(f"**Total Rows:** {len(df)}")
-                            
-                            # Show the filtered data
-                            st.dataframe(df, use_container_width=True)
+                
+                # Always display the data if it exists in session state
+                if 'dynamic_stepup_data' in st.session_state and st.session_state.dynamic_stepup_data is not None:
+                    df = st.session_state.dynamic_stepup_data
+                    
+                    # Display the data
+                    st.subheader("📊 Step-Up Pricing Data")
+                    st.write(f"**Total Rows:** {len(df)}")
+                    
+                    # Show the filtered data
+                    st.dataframe(df, use_container_width=True)
                                 
             
             # Split invoice option
@@ -1414,48 +1418,53 @@ def show_csv_transformation_tab():
                         st.success("Data transformed successfully!")
                     else:
                         st.success(f"Data transformed successfully! Removed {missing_count} rows with missing customer_id.")
-                    
-                    # Show transformed data
-                    st.subheader("Transformed Data Preview")
-                    
-                    # Add custom CSS for dataframe headers
-                    st.markdown("""
-                    <style>
-                    .stDataFrame thead th {
-                        font-family: 'Helvetica Neue', Arial, sans-serif !important;
-                        font-size: 8px !important;
-                    }
-                    </style>
-                    """, unsafe_allow_html=True)
-                    
-                    st.dataframe(df_transformed, use_container_width=True, hide_index=True)
-                    
-                    # Download button
-                    csv_str = df_transformed.to_csv(index=False)
-                    st.download_button(
-                        label="Download Transformed CSV",
-                        data=csv_str,
-                        file_name=f"usage_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-                        mime="text/csv"
-                    )
-                    
-                    # Upload to Tabs button
-                    st.markdown("---")
-                    st.markdown("### 📤 Upload to Tabs Platform")
-                    st.markdown(f"""
-                    <a href="https://app.tabsplatform.com/merchant/usage/all?page=1&sort=uploadTime&sortDir=desc" target="_blank">
-                        <button style="
-                            background-color: #FF6B6B;
-                            color: white;
-                            border: none;
-                            padding: 10px 20px;
-                            border-radius: 5px;
-                            cursor: pointer;
-                            font-size: 16px;
-                            font-weight: bold;
-                        ">📤 Upload Usage</button>
-                    </a>
-                    """, unsafe_allow_html=True)
+                
+            # Always display transformed data if it exists in session state (moved outside try block)
+            if 'transformed_data' in st.session_state and st.session_state.transformed_data is not None:
+                df_transformed = st.session_state.transformed_data
+                
+                # Show transformed data
+                st.subheader("Transformed Data Preview")
+                
+                # Add custom CSS for dataframe headers
+                st.markdown("""
+                <style>
+                .stDataFrame thead th {
+                    font-family: 'Helvetica Neue', Arial, sans-serif !important;
+                    font-size: 8px !important;
+                }
+                </style>
+                """, unsafe_allow_html=True)
+                
+                st.dataframe(df_transformed, use_container_width=True, hide_index=True)
+                
+                # Download button
+                csv_str = df_transformed.to_csv(index=False)
+                st.download_button(
+                    label="Download Transformed CSV",
+                    data=csv_str,
+                    file_name=f"usage_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                    mime="text/csv",
+                    key="download_transformed_csv"
+                )
+                
+                # Upload to Tabs button
+                st.markdown("---")
+                st.markdown("### 📤 Upload to Tabs Platform")
+                st.markdown(f"""
+                <a href="https://app.tabsplatform.com/merchant/usage/all?page=1&sort=uploadTime&sortDir=desc" target="_blank">
+                    <button style="
+                        background-color: #FF6B6B;
+                        color: white;
+                        border: none;
+                        padding: 10px 20px;
+                        border-radius: 5px;
+                        cursor: pointer;
+                        font-size: 16px;
+                        font-weight: bold;
+                    ">📤 Upload Usage</button>
+                </a>
+                """, unsafe_allow_html=True)
                     
         except Exception as e:
             st.error(f"Error processing CSV: {e}")
@@ -1635,7 +1644,7 @@ def run_qa_comparison(usage_df, tabs_df, tabs_source_name="Tabs Data"):
 
 def show_pdf_workflow_tab():
     """Show PDF generation and upload workflow tab"""
-    st.header("PDF Generation & Upload Workflow")
+    st.header("PDF Generation & Invoice Attachment")
     st.markdown("Complete workflow for generating and uploading invoice PDFs")
     
     # Note about CSV source
@@ -1663,27 +1672,6 @@ def show_pdf_workflow_tab():
         st.session_state.pdf_problematic_files = None
     if 'current_tab' not in st.session_state:
         st.session_state.current_tab = 0  # Default to first tab
-    
-    # Add reset button if any steps are completed
-    if any(st.session_state.workflow_progress.values()):
-        col1, col2, col3 = st.columns([1, 1, 1])
-        with col2:
-            if st.button("🔄 Reset Workflow", type="secondary", help="Clear all progress and start over"):
-                # Reset all progress
-                st.session_state.workflow_progress = {
-                    'csv_uploaded': False,
-                    'pdfs_generated': False,
-                    'csv_mapping_created': False,
-                    'ready_for_upload': False
-                }
-                # Clear session state data
-                if 'uploaded_csv' in st.session_state:
-                    del st.session_state.uploaded_csv
-                if 'generated_pdfs' in st.session_state:
-                    del st.session_state.generated_pdfs
-                if 'pdf_csv_data' in st.session_state:
-                    del st.session_state.pdf_csv_data
-                st.success("🔄 Workflow reset successfully! Please refresh the page to see changes.")
     
     # Initialize current tab in session state
     if 'current_tab' not in st.session_state:
@@ -1727,7 +1715,7 @@ def show_pdf_workflow_tab():
                     
                     # Show preview
                     st.subheader("Data Preview")
-                    st.dataframe(df.head(10), use_container_width=True)
+                    st.dataframe(df, use_container_width=True)
                     
                     # Show column info
                     st.subheader("Column Information")
